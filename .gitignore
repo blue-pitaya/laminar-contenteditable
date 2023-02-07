@@ -1,0 +1,14 @@
+# General/scala
+**/target/
+*.bloop
+*.metals
+.bsp
+*metals.sbt
+build/
+
+# Javascript
+node_modules
+example/ui/dist/
+
+# Scala.js
+example/ui/sccode/
