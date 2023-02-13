@@ -23,6 +23,16 @@ object Parser {
     else if (node.isDivNode) "\n"
     else ""
 
+  private def updateQueue(
+      queue: Seq[dom.Node],
+      currentNode: dom.Node
+  ): Seq[dom.Node] = {
+    val childOpt = Option(currentNode.firstChild)
+    val siblingOpt = Option(currentNode.nextSibling)
+
+    Seq(childOpt).flatten ++ Seq(siblingOpt).flatten ++ queue
+  }
+
   // TODO: nested divs are parsed badly
   def toTextContent(element: dom.HTMLElement): String = {
     @tailrec
@@ -30,14 +40,8 @@ object Parser {
       queue match {
         case node :: rest =>
           val nextContent = content + nodeToString(node)
-          // Add first children and then siblings to queue to ensure correct text order
-          val childOpt = Option(node.firstChild)
-          val siblingOpt = Option(node.nextSibling)
-          val nextQueue = Seq(childOpt).flatten ++ Seq(siblingOpt).flatten ++
-            rest
-
+          val nextQueue = updateQueue(queue, node)
           traverseNodes(nextQueue, nextContent)
-
         case Nil => content
       }
 

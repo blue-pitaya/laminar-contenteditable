@@ -4,21 +4,21 @@ import com.raquo.laminar.api.L._
 import org.scalajs.dom
 
 object Editor {
-  val observerConfig = new dom.MutationObserverInit {
+  private val observerConfig = new dom.MutationObserverInit {
     characterData = true;
     characterDataOldValue = true;
     childList = true;
     subtree = true;
   }
 
-  def observeChanges(
+  private def observeChanges(
       element: dom.HTMLElement,
       mutationObserer: dom.MutationObserver
   ): Unit = {
     mutationObserer.observe(element, observerConfig)
   }
 
-  def setCaretPosition(
+  private def setCaretPosition(
       caretPosition: CaretPosition,
       element: dom.HTMLElement
   ): Unit = {
@@ -26,7 +26,7 @@ object Editor {
     CaretOps.setCurrentRange(range)
   }
 
-  def flushChanges(
+  private def flushChanges(
       parseText: String => String,
       element: dom.HTMLElement,
       observer: dom.MutationObserver
@@ -47,7 +47,7 @@ object Editor {
     observeChanges(element, observer)
   }
 
-  def createMutationObserver(
+  private def createMutationObserver(
       parseText: String => String,
       element: dom.HTMLElement
   ) = new dom.MutationObserver((_, mutObs) => {
@@ -66,12 +66,15 @@ object Editor {
 
   def component(parseText: String => String) = {
     pre(
-      styles,
       onMountCallback { ctx =>
         val element = ctx.thisNode.ref
         val mutationObserver = createMutationObserver(parseText, element)
         observeChanges(element, mutationObserver)
       }
     )
+  }
+
+  def componentWithDefaultStyles(parseText: String => String) = {
+    component(parseText).amend(styles)
   }
 }

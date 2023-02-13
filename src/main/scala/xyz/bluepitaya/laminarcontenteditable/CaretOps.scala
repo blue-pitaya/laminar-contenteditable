@@ -8,7 +8,10 @@ case class CaretPosition(pos: Int, extent: Int)
 object CaretOps {
   import DomNodeExtensions.RichNode
 
-  def getCurrentRange: dom.Range = dom.window.getSelection().getRangeAt(0)
+  private def getCurrentRange: dom.Range = dom
+    .window
+    .getSelection()
+    .getRangeAt(0)
 
   def setCurrentRange(range: dom.Range): Unit = {
     val selection = dom.window.getSelection()
@@ -16,7 +19,6 @@ object CaretOps {
     selection.addRange(range)
   }
 
-  // TODO: dup in Parser code
   private def updateQueue(
       queue: Seq[dom.Node],
       currentNode: dom.Node
