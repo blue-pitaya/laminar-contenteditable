@@ -24,7 +24,7 @@ object CaretOps {
     val childOpt = Option(currentNode.firstChild)
     val siblingOpt = Option(currentNode.nextSibling)
 
-    Seq(childOpt).flatten ++ queue ++ Seq(siblingOpt).flatten
+    Seq(childOpt).flatten ++ Seq(siblingOpt).flatten ++ queue
   }
 
   private def getContentSize(node: dom.Node): Int =
@@ -77,12 +77,8 @@ object CaretOps {
           val offset =
             if (node.isDivNode) 0
             else pos - currentOffset
-          dom.console.log(offset)
           range.setStart(node, offset)
-
           // setEnd(range, node, offset)
-          println(range.startContainer.nodeName)
-          println(node.nodeName)
           range
         } else traverse(
           updateQueue(rest, node),

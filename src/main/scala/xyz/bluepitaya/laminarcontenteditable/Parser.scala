@@ -33,8 +33,9 @@ object Parser {
           // Add first children and then siblings to queue to ensure correct text order
           val childOpt = Option(node.firstChild)
           val siblingOpt = Option(node.nextSibling)
-          val nextQueue = Seq(childOpt).flatten ++ rest ++
-            Seq(siblingOpt).flatten
+          val nextQueue = Seq(childOpt).flatten ++ Seq(siblingOpt).flatten ++
+            rest
+
           traverseNodes(nextQueue, nextContent)
 
         case Nil => content

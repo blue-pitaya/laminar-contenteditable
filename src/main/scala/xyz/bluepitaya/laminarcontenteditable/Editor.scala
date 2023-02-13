@@ -33,19 +33,14 @@ object Editor {
   ): Unit = {
     // Get text content with newlines from element
     val textContent = Parser.toTextContent(element)
-    println("***")
-    println(textContent)
     // Aply user defined transform
     val parsedTextContent = parseText(textContent)
     // Turn back content to html content with respect for contenteditable logic
     val htmlContent = Parser.toHtmlContent(parsedTextContent)
-    println("---")
-    println(htmlContent)
 
     // Mutation observer must be disconnected before we manually change innerHTML to avoid infinite loop
     observer.disconnect()
     val caretPosition = CaretOps.getPosition(element)
-    println(caretPosition)
     element.innerHTML = htmlContent
     // Restore caret position which was resetted with change of inner HTML
     setCaretPosition(caretPosition, element)
@@ -74,14 +69,8 @@ object Editor {
       styles,
       onMountCallback { ctx =>
         val element = ctx.thisNode.ref
-        element.innerHTML = ""
         val mutationObserver = createMutationObserver(parseText, element)
         observeChanges(element, mutationObserver)
-
-      },
-      onClick --> Observer[Any](_ => dom.console.log(CaretOps.getCurrentRange)),
-      inContext { ctx =>
-        onClick --> Observer[Any](_ => println(CaretOps.getPosition(ctx.ref)))
       }
     )
   }

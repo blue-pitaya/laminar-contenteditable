@@ -6,7 +6,12 @@ import xyz.bluepitaya.common.Hsv
 import xyz.bluepitaya.laminarcontenteditable.Editor
 
 object Main extends App {
-  val app = div(Editor.component(s => s))
+  val f = (v: String) => {
+    val regex = """red""".r
+    regex.replaceAllIn(v, _ => """<span style="color: red;">red</span>""")
+  }
+
+  val app = div(Editor.component(f))
 
   val containerNode = dom.document.querySelector("#app")
 
