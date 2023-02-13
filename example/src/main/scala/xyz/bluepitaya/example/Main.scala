@@ -11,7 +11,7 @@ object Main extends App {
     regex.replaceAllIn(v, _ => """<span style="color: red;">red</span>""")
   }
 
-  val app = div(Editor.component(f))
+  val app = div(Editor.componentWithDefaultStyles(f))
 
   val containerNode = dom.document.querySelector("#app")
 

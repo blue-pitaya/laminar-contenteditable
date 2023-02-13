@@ -40,7 +40,7 @@ object Parser {
       queue match {
         case node :: rest =>
           val nextContent = content + nodeToString(node)
-          val nextQueue = updateQueue(queue, node)
+          val nextQueue = updateQueue(rest, node)
           traverseNodes(nextQueue, nextContent)
         case Nil => content
       }
