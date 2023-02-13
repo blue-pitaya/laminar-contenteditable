@@ -55,22 +55,28 @@ object Editor {
   })
 
   val styles = Seq(
-    whiteSpace.preWrap,
-    outline("none"),
     padding("10px"),
     border("1px solid black"),
     width("500px"),
     height("500px"),
-    contentEditable(true)
+    overflowY.auto
   )
 
   def component(parseText: String => String) = {
-    pre(
-      onMountCallback { ctx =>
-        val element = ctx.thisNode.ref
-        val mutationObserver = createMutationObserver(parseText, element)
-        observeChanges(element, mutationObserver)
-      }
+    div(
+      pre(
+        contentEditable(true),
+        whiteSpace.preWrap,
+        width("100%"),
+        height("100%"),
+        margin("0"),
+        outline("none"),
+        onMountCallback { ctx =>
+          val element = ctx.thisNode.ref
+          val mutationObserver = createMutationObserver(parseText, element)
+          observeChanges(element, mutationObserver)
+        }
+      )
     )
   }
 
