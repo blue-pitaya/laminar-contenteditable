@@ -38,6 +38,7 @@ object Editor {
     val textContent = Parser.toTextContent(element)
     // Aply user defined transform
     val parsedTextContent = parseText(textContent)
+    println(textContent)
     textState.set(textContent)
 
     val caretPosition = CaretOps.getPosition(element)
@@ -101,11 +102,7 @@ object Editor {
     overflowY.auto
   )
 
-  def getIndentSize(
-      text: String,
-      caretPosition: Int,
-      indentChar: Char = ' '
-  ): Int = {
+  def getIndentSize(text: String, caretPosition: Int, indentChar: Char): Int = {
     def f(
         text: String,
         currentIndent: Int,
@@ -130,6 +127,8 @@ object Editor {
   // TODO: current text can be returned as EventStream or Signal
   /** Do not amend any new elements to this components */
   def component(currentText: Var[String], parseText: String => String) = {
+    val indentChar = '\t'
+
     div(
       pre(
         contentEditable(true),
@@ -149,7 +148,7 @@ object Editor {
               if (e.keyCode == dom.KeyCode.Tab) {
                 e.preventDefault()
                 insertTextOnCaret(
-                  "  ",
+                  indentChar.toString(),
                   parseText,
                   currentText,
                   element,
@@ -164,9 +163,9 @@ object Editor {
                 // we don't care about extend, because it will be deleted anyway be pressing enter
                 val position = caretPosition.pos
                 val text = Parser.toTextContent(element)
-                val indentSize = getIndentSize(text, position)
+                val indentSize = getIndentSize(text, position, indentChar)
                 insertTextOnCaret(
-                  "\n" + (" " * indentSize),
+                  "\n" + (indentChar.toString * indentSize),
                   parseText,
                   currentText,
                   element,
