@@ -27,8 +27,9 @@ object Main extends App {
   )
 
   val app2 = LamEditor.component()
+  val app3 = Proof.component
 
   val containerNode = dom.document.querySelector("#app")
 
-  render(containerNode, app2)
+  render(containerNode, app3)
 }

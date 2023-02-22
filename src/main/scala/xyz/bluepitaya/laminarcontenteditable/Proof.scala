@@ -10,14 +10,40 @@ object Proof {
     val text: Var[Seq[Node]] =
       Var(Seq(span(color <-- col, "color"), " is fine"))
 
+    val refi = Var[Option[dom.HTMLElement]](None)
+
     val el = div(
+      textArea(
+        onMountCallback { ctx =>
+          refi.set(Some(ctx.thisNode.ref))
+        },
+        onKeyDown -->
+          Observer[dom.KeyboardEvent] { e =>
+            dom.console.log(e)
+          },
+        onKeyUp -->
+          Observer[dom.KeyboardEvent] { e =>
+            dom.console.log(e)
+          }
+      ),
       pre(
         contentEditable(true),
         children <-- text,
         onKeyDown -->
-          Observer[Any] { _ =>
-            val textVal = text.now()
-            println(textVal)
+          Observer[dom.KeyboardEvent] { e =>
+            val ev = new dom.KeyboardEvent(
+              e.`type`,
+              e.asInstanceOf[dom.KeyboardEventInit]
+            )
+            refi.now().foreach(el => el.dispatchEvent(ev))
+          },
+        onKeyUp -->
+          Observer[dom.KeyboardEvent] { e =>
+            val ev = new dom.KeyboardEvent(
+              e.`type`,
+              e.asInstanceOf[dom.KeyboardEventInit]
+            )
+            refi.now().foreach(el => el.dispatchEvent(ev))
           }
       )
     )
