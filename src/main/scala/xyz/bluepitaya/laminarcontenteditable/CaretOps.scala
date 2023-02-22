@@ -8,12 +8,20 @@ case class CaretPosition(pos: Int, extent: Int)
 object CaretOps {
   import DomNodeExtensions.RichNode
 
+  def setCaretPosition(
+      caretPosition: CaretPosition,
+      element: dom.HTMLElement
+  ): Unit = {
+    val range = CaretOps.makeRange(element, caretPosition)
+    CaretOps.setCurrentRange(range)
+  }
+
   private def getCurrentRange: dom.Range = dom
     .window
     .getSelection()
     .getRangeAt(0)
 
-  def setCurrentRange(range: dom.Range): Unit = {
+  private def setCurrentRange(range: dom.Range): Unit = {
     val selection = dom.window.getSelection()
     selection.removeAllRanges() // empty()
     selection.addRange(range)
@@ -62,7 +70,7 @@ object CaretOps {
   }
 
   // TODO: make extent also!
-  def makeRange(
+  private def makeRange(
       element: dom.HTMLElement,
       caretPos: CaretPosition
   ): dom.Range = {

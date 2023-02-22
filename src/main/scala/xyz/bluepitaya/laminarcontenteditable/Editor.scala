@@ -2,32 +2,12 @@ package xyz.bluepitaya.laminarcontenteditable
 
 import com.raquo.laminar.api.L._
 import org.scalajs.dom
+import MutationObserverHelper._
+import StringHelper._
 
 //FIXME: enter on blank text is broken
 
 object Editor {
-  private val observerConfig = new dom.MutationObserverInit {
-    characterData = true;
-    characterDataOldValue = true;
-    childList = true;
-    subtree = true;
-  }
-
-  private def observeChanges(
-      element: dom.HTMLElement,
-      mutationObserer: dom.MutationObserver
-  ): Unit = {
-    mutationObserer.observe(element, observerConfig)
-  }
-
-  private def setCaretPosition(
-      caretPosition: CaretPosition,
-      element: dom.HTMLElement
-  ): Unit = {
-    val range = CaretOps.makeRange(element, caretPosition)
-    CaretOps.setCurrentRange(range)
-  }
-
   private def flushChanges(
       parseText: String => String,
       textState: Var[String],
@@ -58,13 +38,9 @@ object Editor {
     observer.disconnect()
     element.innerHTML = htmlContent
     // Restore caret position which was resetted with change of inner HTML
-    setCaretPosition(caretPosition, element)
-    observeChanges(element, observer)
-
+    CaretOps.setCaretPosition(caretPosition, element)
+    observer.observeElement(element)
   }
-
-  private def insertOnPos(original: String, pos: Int, appendedText: String) =
-    original.substring(0, pos) + appendedText + original.substring(pos)
 
   private def insertTextOnCaret(
       text: String,
@@ -78,21 +54,13 @@ object Editor {
     // Aply user defined transform
 
     val caretPosition = CaretOps.getPosition(element)
-    val updatedText = insertOnPos(textContent, caretPosition.pos, text)
+    val updatedText = textContent.insertOnPos(caretPosition.pos, text)
     textState.set(updatedText)
     val parsedTextContent = parseText(updatedText)
     val updatedCaret = caretPosition.copy(pos = caretPosition.pos + text.size)
 
     commitChanges(updatedCaret, parsedTextContent, element, observer)
   }
-
-  private def createMutationObserver(
-      parseText: String => String,
-      textState: Var[String],
-      element: dom.HTMLElement
-  ) = new dom.MutationObserver((_, mutObs) => {
-    flushChanges(parseText, textState, element, mutObs)
-  })
 
   val styles = Seq(
     padding("10px"),
@@ -101,26 +69,6 @@ object Editor {
     height("500px"),
     overflowY.auto
   )
-
-  def getIndentSize(text: String, caretPosition: Int, indentChar: Char): Int = {
-    def f(
-        text: String,
-        currentIndent: Int,
-        countIndent: Boolean,
-        pos: Int
-    ): Int = text.headOption match {
-      // pos < caretPosition for more elegant behavior
-      case Some(ch) if countIndent && ch == indentChar && pos < caretPosition =>
-        f(text.tail, currentIndent + 1, true, pos + 1)
-      case Some(ch) if ch == '\n' =>
-        if (pos >= caretPosition) currentIndent
-        else f(text.tail, 0, true, pos + 1)
-      case Some(ch) => f(text.tail, currentIndent, false, pos + 1)
-      case None     => currentIndent
-    }
-
-    f(text, 0, true, 0)
-  }
 
   // FIXME: traversal of pre element first child only
   // TODO: hitting enter halfway of indent will leave incomplete indent on original line
@@ -139,9 +87,10 @@ object Editor {
         outline("none"),
         onMountBind { ctx =>
           val element = ctx.thisNode.ref
-          val mutationObserver =
-            createMutationObserver(parseText, currentText, element)
-          observeChanges(element, mutationObserver)
+          val mutationObserver = new dom.MutationObserver((_, mutObs) => {
+            flushChanges(parseText, currentText, element, mutObs)
+          })
+          mutationObserver.observeElement(element)
 
           onKeyDown -->
             Observer[dom.KeyboardEvent] { e =>
@@ -163,7 +112,7 @@ object Editor {
                 // we don't care about extend, because it will be deleted anyway be pressing enter
                 val position = caretPosition.pos
                 val text = Parser.toTextContent(element)
-                val indentSize = getIndentSize(text, position, indentChar)
+                val indentSize = text.getIndentSize(position, indentChar)
                 insertTextOnCaret(
                   "\n" + (indentChar.toString * indentSize),
                   parseText,
