@@ -6,18 +6,22 @@ import xyz.bluepitaya.common.Hsv
 import xyz.bluepitaya.laminarcontenteditable.Editor
 
 object Main extends App {
-  val f = (v: String) => {
-    val regex = """red""".r
-    regex.replaceAllIn(v, _ => """<span style="color: red;">red</span>""")
+  val text = Var("")
+
+  val editorOptions = {
+    val f = (v: String) => {
+      val regex = """red""".r
+      regex.replaceAllIn(v, _ => """<span style="color: red;">red</span>""")
+    }
+
+    Editor.Options(parseText = f, onTextChanged = x => text.set(x))
   }
 
-  val currentText = Var("")
-
   val app = div(
-    Editor.componentWithDefaultStyles(currentText, f),
+    Editor.componentWithDefaultStyles(editorOptions),
     pre(
       child.text <--
-        currentText
+        text
           .signal
           .map(v =>
             if (v.isEmpty()) "Write \"red\" to see effect."
