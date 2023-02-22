@@ -61,4 +61,19 @@ object Parser {
       else s"<div>${lineContent}</div>"
     }
     .mkString
+
+  def toNodes(content: String): Seq[Node] = {
+    println("czaje sei")
+    content
+      .split("\n", -1)
+      .zipWithIndex
+      .map { case (line, idx) =>
+        val lineContent: Node =
+          if (line.isEmpty()) br()
+          else line
+
+        if (idx == 0) lineContent
+        else div(lineContent)
+      }
+  }
 }

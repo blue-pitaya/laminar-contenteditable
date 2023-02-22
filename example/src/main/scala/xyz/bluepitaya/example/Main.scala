@@ -4,6 +4,8 @@ import com.raquo.laminar.api.L._
 import org.scalajs.dom
 import xyz.bluepitaya.common.Hsv
 import xyz.bluepitaya.laminarcontenteditable.Editor
+import xyz.bluepitaya.laminarcontenteditable.Proof
+import xyz.bluepitaya.laminarcontenteditable.LamEditor
 
 object Main extends App {
   val f = (v: String) => {
@@ -11,22 +13,22 @@ object Main extends App {
     regex.replaceAllIn(v, _ => """<span style="color: red;">red</span>""")
   }
 
-  val currentText = Var("")
-
   val app = div(
-    Editor.componentWithDefaultStyles(currentText, f),
-    pre(
-      child.text <--
-        currentText
-          .signal
-          .map(v =>
-            if (v.isEmpty()) "Write \"red\" to see effect."
-            else v
-          )
-    )
+    Editor.componentWithDefaultStyles(f)
+//    pre(
+//      child.text <--
+//        currentText
+//          .signal
+//          .map(v =>
+//            if (v.isEmpty()) "Write \"red\" to see effect."
+//            else v
+//          )
+//    )
   )
+
+  val app2 = LamEditor.component()
 
   val containerNode = dom.document.querySelector("#app")
 
-  render(containerNode, app)
+  render(containerNode, app2)
 }
