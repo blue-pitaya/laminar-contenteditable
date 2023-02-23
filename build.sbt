@@ -24,6 +24,7 @@ lazy val root = (project in file("."))
     ),
     libraryDependencies += "xyz.bluepitaya" %%% "common-utils" % "1.0",
     libraryDependencies += "com.raquo" %%% "laminar" % "0.14.5",
+    libraryDependencies += "io.laminext" %%% "core" % "0.14.4",
     libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.13" % Test,
     publishing
   )

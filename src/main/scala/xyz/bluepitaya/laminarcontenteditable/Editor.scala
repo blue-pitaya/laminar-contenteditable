@@ -4,11 +4,17 @@ import com.raquo.laminar.api.L._
 import org.scalajs.dom
 import MutationObserverHelper._
 import StringHelper._
+import io.laminext.syntax.dangerous._
 
 //FIXME: enter on blank text is broken
 
 object Editor {
   case class Options(parseText: String => String, onTextChanged: String => Unit)
+
+  sealed trait Ev
+  case class ChangeHtml(v: String) extends Ev
+  case object MutObsOn extends Ev
+  case object MutObsOff extends Ev
 
   // FIXME: traversal of pre element first child only
   // TODO: hitting enter halfway of indent will leave incomplete indent on original line
@@ -17,7 +23,24 @@ object Editor {
     * in README for more details.
     */
   def component(options: Options) = {
-    val indentChar = '\t'
+    val evBus: EventBus[Ev] = new EventBus
+    val mutObs: Var[Option[dom.MutationObserver]] = Var(None)
+
+    val htmlSignal = evBus
+      .events
+      .filter(e =>
+        e match {
+          case ChangeHtml(v) => true
+          case _             => false
+        }
+      )
+      .map(e =>
+        e match {
+          case ChangeHtml(v) => v
+          case _             => ""
+        }
+      )
+      .toSignal("")
 
     div(
       pre(
@@ -27,42 +50,34 @@ object Editor {
         height("100%"),
         margin("0"),
         outline("none"),
-        onMountBind { ctx =>
+        unsafeInnerHtml <-- htmlSignal,
+        inContext { ctx =>
+          mutObs -->
+            Observer[Option[dom.MutationObserver]](v =>
+              v match {
+                case None        => ()
+                case Some(value) => value.observeElement(ctx.ref)
+              }
+            )
+        },
+        onMountCallback { ctx =>
           val element = ctx.thisNode.ref
           val mutationObserver = new dom.MutationObserver((_, mutObs) => {
             flushChanges(options, element, mutObs)
           })
-          mutationObserver.observeElement(element)
 
-          onKeyDown -->
-            Observer[dom.KeyboardEvent] { e =>
-              if (e.keyCode == dom.KeyCode.Tab) {
-                e.preventDefault()
-                insertTextOnCaret(
-                  indentChar.toString(),
-                  options,
-                  element,
-                  mutationObserver
-                )
-              }
-
-              if (e.keyCode == dom.KeyCode.Enter) {
-                e.preventDefault()
-                // get indent on current line
-                val caretPosition = CaretOps.getPosition(element)
-                // we don't care about extend, because it will be deleted anyway be pressing enter
-                val position = caretPosition.pos
-                val text = Parser.toTextContent(element)
-                val indentSize = text.getIndentSize(position, indentChar)
-                insertTextOnCaret(
-                  "\n" + (indentChar.toString * indentSize),
-                  options,
-                  element,
-                  mutationObserver
-                )
-              }
-            }
+          mutObs.set(Some(mutationObserver))
         }
+        // onMountBind { ctx =>
+        //  val element = ctx.thisNode.ref
+        //  val mutationObserver = new dom.MutationObserver((_, mutObs) => {
+        //    flushChanges(options, element, mutObs)
+        //  })
+        //  mutationObserver.observeElement(element)
+
+        //  onKeyDown -->
+        //    AutoIndent.onKeyDownObserver(element, mutationObserver, options)
+        // }
       )
     )
   }
@@ -91,7 +106,7 @@ object Editor {
     commitChanges(textContent, caretPosition, options, element, observer)
   }
 
-  private def insertTextOnCaret(
+  def insertTextOnCaret(
       text: String,
       options: Options,
       element: dom.HTMLElement,
@@ -123,10 +138,10 @@ object Editor {
     observer.disconnect()
     // FIXME: HTML SANITAZATION TO PREVENT XSS
     element.innerHTML = htmlContent
-    // On chage callback after we actaully updated real element
-    options.onTextChanged(textContent)
     // Restore caret position which was resetted with change of inner HTML
     CaretOps.setCaretPosition(caretPosition, element)
+    // On chage callback after we actaully updated real element
+    // options.onTextChanged(textContent)
     observer.observeElement(element)
   }
 }
