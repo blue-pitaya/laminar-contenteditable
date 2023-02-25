@@ -6,10 +6,16 @@ import MutationObserverHelper._
 import StringHelper._
 import io.laminext.syntax.dangerous._
 
-//FIXME: enter on blank text is broken
+//FIXME: external text should preserve current caret (or dont set any if no caret)
 
 object Editor {
-  case class Options(parseText: String => String, text: Var[String])
+  case class Options(
+      parseText: String => String,
+      text: Var[String],
+      autoIndent: Signal[Boolean] = Val(false),
+      // TODO: change to string later
+      autoIndentChar: Char = '\t'
+  )
 
   sealed trait Ev
   case class ChangeHtml(v: String, caretPosition: Option[CaretPosition])
@@ -25,6 +31,7 @@ object Editor {
     */
   def component(options: Options) = {
     val evBus: EventBus[Ev] = new EventBus
+    val keyBus: EventBus[dom.KeyboardEvent] = new EventBus
 
     div(
       pre(
@@ -48,19 +55,18 @@ object Editor {
           evBus.emit(MutObsOn)
         },
         inContext { ctx =>
-          options.text -->
-            Observer[String](v => onTextChange(v, options, ctx.ref, evBus))
+          Seq(
+            options.text --> { v =>
+              onTextChange(v, options, ctx.ref, evBus)
+            },
+            onKeyDown --> keyBus,
+            keyBus.events.withCurrentValueOf(options.autoIndent) --> {
+              case (e, true) => AutoIndent
+                  .onKeyDownObserver(e, options, ctx.ref, evBus)
+              case (e, false) => ()
+            }
+          )
         }
-        // onMountBind { ctx =>
-        //  val element = ctx.thisNode.ref
-        //  val mutationObserver = new dom.MutationObserver((_, mutObs) => {
-        //    flushChanges(options, element, mutObs)
-        //  })
-        //  mutationObserver.observeElement(element)
-
-        //  onKeyDown -->
-        //    AutoIndent.onKeyDownObserver(element, mutationObserver, options)
-        // }
       )
     )
   }

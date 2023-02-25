@@ -5,14 +5,14 @@ import org.scalajs.dom
 import StringHelper._
 
 object AutoIndent {
-  val indentChar = '\t'
-
   def onKeyDownObserver(
-      element: dom.HTMLElement,
-      mutationObserver: dom.MutationObserver,
+      e: dom.KeyboardEvent,
       options: Editor.Options,
+      element: dom.HTMLElement,
       evBus: EventBus[Editor.Ev]
-  ) = Observer[dom.KeyboardEvent] { e =>
+  ): Unit = {
+    val indentChar = options.autoIndentChar
+
     if (e.keyCode == dom.KeyCode.Tab) {
       e.preventDefault()
       Editor.insertTextOnCaret(indentChar.toString(), options, element, evBus)

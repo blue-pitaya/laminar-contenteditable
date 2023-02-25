@@ -14,11 +14,12 @@ object Main extends App {
       regex.replaceAllIn(v, _ => """<span style="color: red;">red</span>""")
     }
 
-    Editor.Options(parseText = f, text = text)
+    Editor.Options(parseText = f, text = text, autoIndent = Val(true))
   }
 
   val app = div(
     Editor.componentWithDefaultStyles(editorOptions),
+    button("Write red banana", onClick.mapTo("red banana") --> text),
     pre(
       child.text <--
         text
