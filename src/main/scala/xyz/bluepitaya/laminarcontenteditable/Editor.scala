@@ -4,16 +4,22 @@ import com.raquo.laminar.api.L._
 import org.scalajs.dom
 import MutationObserverHelper._
 import StringHelper._
-import io.laminext.syntax.dangerous._
 
 //FIXME: external text should preserve current caret (or dont set any if no caret)
+//TODO: hitting enter halfway of indent will leave incomplete indent on original line
+//TODO: remove div? and add warning about adding children
+//TODO: add to readme warning about innerHTML (or do sanitiztion automaticly and add "unsafe" method)
+// FIXME: traversal of pre element first child only (???)
+// FIXME: HTML SANITAZATION TO PREVENT XSS
+// TODO: nested divs are parsed badly in parse function
+// TODO: windows endings? in parsing HTML to text
+// TODO: change autoIndentChar to string later
 
 object Editor {
   case class Options(
       parseText: String => String,
       text: Var[String],
       autoIndent: Signal[Boolean] = Val(false),
-      // TODO: change to string later
       autoIndentChar: Char = '\t'
   )
 
@@ -23,12 +29,6 @@ object Editor {
   case object MutObsOn extends Ev
   case object MutObsOff extends Ev
 
-  // FIXME: traversal of pre element first child only
-  // TODO: hitting enter halfway of indent will leave incomplete indent on original line
-  // TODO: current text can be returned as EventStream or Signal
-  /** Do not amend any new elements to this components, see "innerHTML warning"
-    * in README for more details.
-    */
   def component(options: Options) = {
     val evBus: EventBus[Ev] = new EventBus
     val keyBus: EventBus[dom.KeyboardEvent] = new EventBus
@@ -109,7 +109,6 @@ object Editor {
 
     // Mutation observer must be disconnected before we manually change innerHTML to avoid infinite loop
     evBus.emit(MutObsOff)
-    // FIXME: HTML SANITAZATION TO PREVENT XSS
     evBus.emit(ChangeHtml(htmlContent, caretPosition))
     evBus.emit(MutObsOn)
   }

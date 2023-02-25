@@ -18,23 +18,22 @@ object DomNodeExtensions {
 object Parser {
   import DomNodeExtensions.RichNode
 
-  private def nodeToString(node: dom.Node): String =
-    if (node.isTextNode) node.textContent
-    else if (node.isDivNode) "\n"
-    else ""
-
-  private def updateQueue(
-      queue: Seq[dom.Node],
-      currentNode: dom.Node
-  ): Seq[dom.Node] = {
-    val childOpt = Option(currentNode.firstChild)
-    val siblingOpt = Option(currentNode.nextSibling)
-
-    Seq(childOpt).flatten ++ Seq(siblingOpt).flatten ++ queue
-  }
-
-  // TODO: nested divs are parsed badly
   def toTextContent(element: dom.HTMLElement): String = {
+    def nodeToString(node: dom.Node): String =
+      if (node.isTextNode) node.textContent
+      else if (node.isDivNode) "\n"
+      else ""
+
+    def updateQueue(
+        queue: Seq[dom.Node],
+        currentNode: dom.Node
+    ): Seq[dom.Node] = {
+      val childOpt = Option(currentNode.firstChild)
+      val siblingOpt = Option(currentNode.nextSibling)
+
+      Seq(childOpt).flatten ++ Seq(siblingOpt).flatten ++ queue
+    }
+
     @tailrec
     def traverseNodes(queue: Seq[dom.Node], content: String): String =
       queue match {
@@ -48,7 +47,6 @@ object Parser {
     traverseNodes(Seq(element), "")
   }
 
-  // TODO: windows endings?
   def toHtmlContent(content: String): String = content
     .split("\n", -1)
     .zipWithIndex

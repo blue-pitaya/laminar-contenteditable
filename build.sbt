@@ -1,6 +1,7 @@
 import org.scalajs.linker.interface.ESVersion
 import org.scalajs.linker.interface.OutputPatterns
 import org.scalajs.linker.interface.ModuleSplitStyle
+import org.openqa.selenium.firefox.FirefoxOptions
 
 lazy val baseSettings = Seq(
   organization := "xyz.bluepitaya",
@@ -17,18 +18,17 @@ val publishing = Seq(
 
 lazy val root = (project in file("."))
   .settings(baseSettings)
+  .enablePlugins(ScalaJSPlugin) 
   .settings(
     name := "laminar-contenteditable",
     scalacOptions := Seq(
       //"-Xlint"
     ),
-    libraryDependencies += "xyz.bluepitaya" %%% "common-utils" % "1.0",
     libraryDependencies += "com.raquo" %%% "laminar" % "0.14.5",
-    libraryDependencies += "io.laminext" %%% "core" % "0.14.4",
     libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.13" % Test,
-    publishing
+    publishing,
+    jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(new FirefoxOptions())
   )
-  .enablePlugins(ScalaJSPlugin) 
 
 lazy val example = (project in file("example"))
   .dependsOn(root)
