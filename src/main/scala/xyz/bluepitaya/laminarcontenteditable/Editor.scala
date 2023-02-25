@@ -9,10 +9,11 @@ import io.laminext.syntax.dangerous._
 //FIXME: enter on blank text is broken
 
 object Editor {
-  case class Options(parseText: String => String, onTextChanged: String => Unit)
+  case class Options(parseText: String => String, text: Var[String])
 
   sealed trait Ev
-  case class ChangeHtml(v: String) extends Ev
+  case class ChangeHtml(v: String, caretPosition: Option[CaretPosition])
+      extends Ev
   case object MutObsOn extends Ev
   case object MutObsOff extends Ev
 
@@ -24,23 +25,6 @@ object Editor {
     */
   def component(options: Options) = {
     val evBus: EventBus[Ev] = new EventBus
-    val mutObs: Var[Option[dom.MutationObserver]] = Var(None)
-
-    val htmlSignal = evBus
-      .events
-      .filter(e =>
-        e match {
-          case ChangeHtml(v) => true
-          case _             => false
-        }
-      )
-      .map(e =>
-        e match {
-          case ChangeHtml(v) => v
-          case _             => ""
-        }
-      )
-      .toSignal("")
 
     div(
       pre(
@@ -50,23 +34,22 @@ object Editor {
         height("100%"),
         margin("0"),
         outline("none"),
-        unsafeInnerHtml <-- htmlSignal,
-        inContext { ctx =>
-          mutObs -->
-            Observer[Option[dom.MutationObserver]](v =>
-              v match {
-                case None        => ()
-                case Some(value) => value.observeElement(ctx.ref)
-              }
-            )
-        },
-        onMountCallback { ctx =>
+        onMountBind { ctx =>
           val element = ctx.thisNode.ref
           val mutationObserver = new dom.MutationObserver((_, mutObs) => {
-            flushChanges(options, element, mutObs)
+            // Get text content with newlines from element
+            val textContent = Parser.toTextContent(element)
+            options.text.set(textContent)
           })
 
-          mutObs.set(Some(mutationObserver))
+          evBus --> evObserver(mutationObserver, element)
+        },
+        onMountCallback { _ =>
+          evBus.emit(MutObsOn)
+        },
+        inContext { ctx =>
+          options.text -->
+            Observer[String](v => onTextChange(v, options, ctx.ref, evBus))
         }
         // onMountBind { ctx =>
         //  val element = ctx.thisNode.ref
@@ -94,54 +77,67 @@ object Editor {
     component(options).amend(styles)
   }
 
-  private def flushChanges(
+  private def evObserver(
+      mutObs: dom.MutationObserver,
+      element: dom.HTMLElement
+  ) = Observer[Ev] { e =>
+    e match {
+      case ChangeHtml(v, caretPosition) =>
+        element.innerHTML = v
+        // Restore caret position which was resetted with change of inner HTML
+        caretPosition.foreach(v => CaretOps.setCaretPosition(v, element))
+      case MutObsOn  => mutObs.observeElement(element)
+      case MutObsOff => mutObs.disconnect()
+    }
+  }
+
+  private def commit(
+      text: String,
+      caretPosition: Option[CaretPosition],
+      evBus: EventBus[Ev],
+      options: Options
+  ): Unit = {
+    val parsedTextContent = options.parseText(text)
+    // Turn content to html content with respect for contenteditable logic
+    val htmlContent = Parser.toHtmlContent(parsedTextContent)
+
+    // Mutation observer must be disconnected before we manually change innerHTML to avoid infinite loop
+    evBus.emit(MutObsOff)
+    // FIXME: HTML SANITAZATION TO PREVENT XSS
+    evBus.emit(ChangeHtml(htmlContent, caretPosition))
+    evBus.emit(MutObsOn)
+  }
+
+  private def onTextChange(
+      text: String,
       options: Options,
       element: dom.HTMLElement,
-      observer: dom.MutationObserver
+      evBus: EventBus[Ev]
   ): Unit = {
-    // Get text content with newlines from element
-    val textContent = Parser.toTextContent(element)
     val caretPosition = CaretOps.getPosition(element)
 
-    commitChanges(textContent, caretPosition, options, element, observer)
+    commit(text, caretPosition, evBus, options)
   }
 
   def insertTextOnCaret(
       text: String,
       options: Options,
       element: dom.HTMLElement,
-      observer: dom.MutationObserver
+      evBus: EventBus[Ev]
   ): Unit = {
     // Get text content with newlines from element
     val textContent = Parser.toTextContent(element)
     val caretPosition = CaretOps.getPosition(element)
-    val updatedText = textContent.insertOnPos(caretPosition.pos, text)
 
-    // Aply user defined transform
-    val updatedCaret = caretPosition.copy(pos = caretPosition.pos + text.size)
+    caretPosition.foreach { caretPosition =>
+      val updatedText = textContent.insertOnPos(caretPosition.pos, text)
 
-    commitChanges(updatedText, updatedCaret, options, element, observer)
+      // Aply user defined transform
+      val updatedCaret =
+        Some(caretPosition.copy(pos = caretPosition.pos + text.size))
+
+      commit(updatedText, updatedCaret, evBus, options)
+    }
   }
 
-  private def commitChanges(
-      textContent: String,
-      caretPosition: CaretPosition,
-      options: Options,
-      element: dom.HTMLElement,
-      observer: dom.MutationObserver
-  ): Unit = {
-    val parsedTextContent = options.parseText(textContent)
-    // Turn content to html content with respect for contenteditable logic
-    val htmlContent = Parser.toHtmlContent(parsedTextContent)
-
-    // Mutation observer must be disconnected before we manually change innerHTML to avoid infinite loop
-    observer.disconnect()
-    // FIXME: HTML SANITAZATION TO PREVENT XSS
-    element.innerHTML = htmlContent
-    // Restore caret position which was resetted with change of inner HTML
-    CaretOps.setCaretPosition(caretPosition, element)
-    // On chage callback after we actaully updated real element
-    // options.onTextChanged(textContent)
-    observer.observeElement(element)
-  }
 }

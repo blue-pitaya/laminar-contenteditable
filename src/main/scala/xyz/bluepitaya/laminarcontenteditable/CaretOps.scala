@@ -2,6 +2,7 @@ package xyz.bluepitaya.laminarcontenteditable
 
 import com.raquo.laminar.api.L._
 import org.scalajs.dom
+import scala.util.Try
 
 case class CaretPosition(pos: Int, extent: Int)
 
@@ -16,11 +17,10 @@ object CaretOps {
     CaretOps.setCurrentRange(range)
   }
 
-  private def getCurrentRange: dom.Range = dom
-    .window
-    .getSelection()
-    .getRangeAt(0)
+  private def getCurrentRange: Try[dom.Range] =
+    Try(dom.window.getSelection().getRangeAt(0))
 
+  // TODO: possible exception?
   private def setCurrentRange(range: dom.Range): Unit = {
     val selection = dom.window.getSelection()
     selection.removeAllRanges() // empty()
@@ -44,29 +44,36 @@ object CaretOps {
     else 0
 
   // TODO: extent
-  def getPosition(element: dom.HTMLElement): CaretPosition = {
+  def getPosition(element: dom.HTMLElement): Option[CaretPosition] = {
     val range = getCurrentRange
-    val extent =
-      if (!range.collapsed) range.toString().size
-      else 0
+    range
+      .map { range =>
+        val extent =
+          if (!range.collapsed) range.toString().size
+          else 0
 
-    def traverse(queue: Seq[dom.Node], currentOffset: Int): Int = queue match {
-      case node :: rest =>
-        if (node == range.startContainer) {
-          val additionalOffset =
-            if (node.isDivNode) 1
-            else 0
-          currentOffset + range.startOffset + additionalOffset
-        } else {
-          val nodeContentSize = getContentSize(node)
-          traverse(updateQueue(rest, node), currentOffset + nodeContentSize)
-        }
-      case Nil => currentOffset
-    }
+        def traverse(queue: Seq[dom.Node], currentOffset: Int): Int =
+          queue match {
+            case node :: rest =>
+              if (node == range.startContainer) {
+                val additionalOffset =
+                  if (node.isDivNode) 1
+                  else 0
+                currentOffset + range.startOffset + additionalOffset
+              } else {
+                val nodeContentSize = getContentSize(node)
+                traverse(
+                  updateQueue(rest, node),
+                  currentOffset + nodeContentSize
+                )
+              }
+            case Nil => currentOffset
+          }
 
-    val position = traverse(Seq(element), 0)
-    CaretPosition(position, extent)
-
+        val position = traverse(Seq(element), 0)
+        Some(CaretPosition(position, extent))
+      }
+      .getOrElse(None)
   }
 
   // TODO: make extent also!

@@ -10,32 +10,30 @@ object AutoIndent {
   def onKeyDownObserver(
       element: dom.HTMLElement,
       mutationObserver: dom.MutationObserver,
-      options: Editor.Options
+      options: Editor.Options,
+      evBus: EventBus[Editor.Ev]
   ) = Observer[dom.KeyboardEvent] { e =>
     if (e.keyCode == dom.KeyCode.Tab) {
       e.preventDefault()
-      Editor.insertTextOnCaret(
-        indentChar.toString(),
-        options,
-        element,
-        mutationObserver
-      )
+      Editor.insertTextOnCaret(indentChar.toString(), options, element, evBus)
     }
 
     if (e.keyCode == dom.KeyCode.Enter) {
       e.preventDefault()
       // get indent on current line
       val caretPosition = CaretOps.getPosition(element)
-      // we don't care about extend, because it will be deleted anyway be pressing enter
-      val position = caretPosition.pos
-      val text = Parser.toTextContent(element)
-      val indentSize = text.getIndentSize(position, indentChar)
-      Editor.insertTextOnCaret(
-        "\n" + (indentChar.toString * indentSize),
-        options,
-        element,
-        mutationObserver
-      )
+      caretPosition.foreach { caretPosition =>
+        // we don't care about extend, because it will be deleted anyway be pressing enter
+        val position = caretPosition.pos
+        val text = Parser.toTextContent(element)
+        val indentSize = text.getIndentSize(position, indentChar)
+        Editor.insertTextOnCaret(
+          "\n" + (indentChar.toString * indentSize),
+          options,
+          element,
+          evBus
+        )
+      }
     }
   }
 }
