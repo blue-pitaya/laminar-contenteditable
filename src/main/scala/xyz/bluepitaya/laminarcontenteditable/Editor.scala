@@ -11,7 +11,6 @@ import StringHelper._
 //TODO: add to readme warning about innerHTML (or do sanitiztion automaticly and add "unsafe" method)
 // FIXME: traversal of pre element first child only (???)
 // FIXME: HTML SANITAZATION TO PREVENT XSS
-// TODO: nested divs are parsed badly in parse function
 // TODO: windows endings? in parsing HTML to text
 // TODO: change autoIndentChar to string later
 

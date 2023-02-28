@@ -1,7 +1,7 @@
 import org.scalajs.linker.interface.ESVersion
 import org.scalajs.linker.interface.OutputPatterns
 import org.scalajs.linker.interface.ModuleSplitStyle
-import org.openqa.selenium.firefox.FirefoxOptions
+import org.openqa.selenium.firefox.{FirefoxOptions, FirefoxDriverLogLevel}
 
 lazy val baseSettings = Seq(
   organization := "xyz.bluepitaya",
@@ -27,7 +27,7 @@ lazy val root = (project in file("."))
     libraryDependencies += "com.raquo" %%% "laminar" % "0.14.5",
     libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.13" % Test,
     publishing,
-    jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(new FirefoxOptions())
+    jsEnv := new org.scalajs.jsenv.selenium.SeleniumJSEnv(new FirefoxOptions().setLogLevel(FirefoxDriverLogLevel.FATAL)),
   )
 
 lazy val example = (project in file("example"))
