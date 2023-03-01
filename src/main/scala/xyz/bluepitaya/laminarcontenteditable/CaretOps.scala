@@ -6,6 +6,10 @@ import scala.util.Try
 
 case class CaretPosition(pos: Int, extent: Int)
 
+object CaretPosition {
+  def default = CaretPosition(0, 0)
+}
+
 object CaretOps {
   import DomNodeExtensions.RichNode
 

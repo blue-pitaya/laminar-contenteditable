@@ -23,31 +23,33 @@ class EditorSpec extends AnyFlatSpec with Matchers {
     wrapper
   }
 
+  def createSut(wrapper: dom.HTMLElement, bus: EventBus[Editor.Event]) = {
+    val app = Editor
+      .component(
+        Editor.Options(parseText = highlighRedTextTransform, bus = bus)
+      )
+      .amend(idAttr("editor"))
+    render(wrapper, app)
+  }
+
+  def editorElement = dom
+    .document
+    .getElementById("editor")
+    .asInstanceOf[dom.HTMLElement]
+
   "changing text externally" should "leave caret in same place" in {
     val text1 = "red tomato"
     val text2 = "red banana"
 
-    val wrapper = createWrapper()
+    val bus = new EventBus[Editor.Event]
 
-    val text = Var(text1)
-    val app = Editor
-      .component(
-        Editor.Options(parseText = highlighRedTextTransform, text = text)
-      )
-      .amend(idAttr("editor"))
-    render(wrapper, app)
+    createSut(createWrapper(), bus)
+    bus.emit(Editor.SetText(text1))
 
-    val editorElement = dom
-      .document
-      .getElementById("editor")
-      .asInstanceOf[dom.HTMLElement]
+    CaretOps.setCaretPosition(CaretPosition(4, 0), editorElement)
+    bus.emit(Editor.SetText(text2))
 
-    val caretPos = CaretPosition(4, 0)
-
-    CaretOps.setCaretPosition(caretPos, editorElement)
-    text.set(text2)
-
-    CaretOps.getPosition(editorElement) shouldEqual Some(caretPos)
+    CaretOps.getPosition(editorElement) shouldEqual Some(CaretPosition(4, 0))
   }
 
   "changing text externally when caret is after new text" should
@@ -55,23 +57,13 @@ class EditorSpec extends AnyFlatSpec with Matchers {
       val text1 = "red tomato\n and red pinacolada"
       val text2 = "red banana"
 
-      val wrapper = createWrapper()
+      val bus = new EventBus[Editor.Event]
+      bus.emit(Editor.SetText(text1))
 
-      val text = Var(text1)
-      val app = Editor
-        .component(
-          Editor.Options(parseText = highlighRedTextTransform, text = text)
-        )
-        .amend(idAttr("editor"))
-      render(wrapper, app)
-
-      val editorElement = dom
-        .document
-        .getElementById("editor")
-        .asInstanceOf[dom.HTMLElement]
+      createSut(createWrapper(), bus)
 
       CaretOps.setCaretPosition(CaretPosition(18, 0), editorElement)
-      text.set(text2)
+      bus.emit(Editor.SetText(text2))
 
       CaretOps.getPosition(editorElement) shouldEqual Some(CaretPosition(11, 0))
     }

@@ -11,16 +11,22 @@ import StringHelper._
 object Editor {
   case class Options(
       parseText: String => String,
-      text: Var[String],
       autoIndent: Signal[Boolean] = Val(false),
-      autoIndentChar: Char = '⊕'
+      autoIndentChar: Char = '⊕',
+      bus: EventBus[Event] = new EventBus[Event]
   )
 
-  sealed trait Ev
-  case class ChangeHtml(v: String, caretPosition: Option[CaretPosition])
-      extends Ev
-  case object MutObsOn extends Ev
-  case object MutObsOff extends Ev
+  sealed trait Event
+  case class SetText(v: String) extends Event
+  case class TextChanged(v: String) extends Event
+
+  private[laminarcontenteditable] sealed trait Ev
+  private[laminarcontenteditable] case class ChangeHtml(
+      v: String,
+      caretPosition: Option[CaretPosition]
+  ) extends Ev
+  private[laminarcontenteditable] case object MutObsOn extends Ev
+  private[laminarcontenteditable] case object MutObsOff extends Ev
 
   def component(options: Options) = {
     val evBus: EventBus[Ev] = new EventBus
@@ -39,7 +45,9 @@ object Editor {
           val mutationObserver = new dom.MutationObserver((_, mutObs) => {
             // Get text content with newlines from element
             val textContent = Parser.toTextContent(element)
-            options.text.set(textContent)
+            val caretPosition = CaretOps.getPosition(element)
+
+            commitTextChange(textContent, caretPosition, evBus, options)
           })
 
           evBus --> evObserver(mutationObserver, element)
@@ -49,9 +57,7 @@ object Editor {
         },
         inContext { ctx =>
           Seq(
-            options.text --> { v =>
-              onTextChange(v, options, ctx.ref, evBus)
-            },
+            options.bus --> obs(ctx.ref, evBus, options),
             onKeyDown --> keyBus,
             keyBus.events.withCurrentValueOf(options.autoIndent) --> {
               case (e, true) => AutoIndent
@@ -76,6 +82,19 @@ object Editor {
     component(options).amend(styles)
   }
 
+  private def obs(
+      element: dom.HTMLElement,
+      evBus: EventBus[Ev],
+      options: Options
+  ): Observer[Event] = Observer[Event] { e =>
+    e match {
+      case SetText(v) =>
+        val caretPosition = CaretOps.getPosition(element)
+        commitTextChange(v, caretPosition, evBus, options)
+      case TextChanged(v) => ()
+    }
+  }
+
   private def evObserver(
       mutObs: dom.MutationObserver,
       element: dom.HTMLElement
@@ -90,7 +109,7 @@ object Editor {
     }
   }
 
-  private def commit(
+  private def commitTextChange(
       text: String,
       caretPosition: Option[CaretPosition],
       evBus: EventBus[Ev],
@@ -104,20 +123,10 @@ object Editor {
     evBus.emit(MutObsOff)
     evBus.emit(ChangeHtml(htmlContent, caretPosition))
     evBus.emit(MutObsOn)
+    options.bus.emit(TextChanged(text))
   }
 
-  private def onTextChange(
-      text: String,
-      options: Options,
-      element: dom.HTMLElement,
-      evBus: EventBus[Ev]
-  ): Unit = {
-    val caretPosition = CaretOps.getPosition(element)
-
-    commit(text, caretPosition, evBus, options)
-  }
-
-  def insertTextOnCaret(
+  private[laminarcontenteditable] def insertTextOnCaret(
       text: String,
       options: Options,
       element: dom.HTMLElement,
@@ -129,13 +138,10 @@ object Editor {
 
     caretPosition.foreach { caretPosition =>
       val updatedText = textContent.insertOnPos(caretPosition.pos, text)
+      // TODO: always good caret?
+      val updatedCaret = caretPosition.copy(pos = caretPosition.pos + text.size)
 
-      // Aply user defined transform
-      val updatedCaret =
-        Some(caretPosition.copy(pos = caretPosition.pos + text.size))
-
-      commit(updatedText, updatedCaret, evBus, options)
+      commitTextChange(updatedText, Some(updatedCaret), evBus, options)
     }
   }
-
 }

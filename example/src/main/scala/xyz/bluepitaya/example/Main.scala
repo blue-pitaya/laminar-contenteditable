@@ -3,9 +3,21 @@ package xyz.bluepitaya.example
 import com.raquo.laminar.api.L._
 import org.scalajs.dom
 import xyz.bluepitaya.laminarcontenteditable.Editor
+import xyz.bluepitaya.laminarcontenteditable.Editor.SetText
+import xyz.bluepitaya.laminarcontenteditable.Editor.TextChanged
 
 object Main extends App {
-  val text = Var("red tomato")
+  val bus = new EventBus[Editor.Event]
+  val textChangeStream = bus
+    .events
+    .map { e =>
+      e match {
+        case SetText(v) => ""
+        case TextChanged(v) =>
+          if (v.text.isEmpty()) "Write \"red\" to see effect."
+          else v.text
+      }
+    }
 
   val editorOptions = {
     val f = (v: String) => {
@@ -17,7 +29,7 @@ object Main extends App {
       "1<div><div>2</div></div>"
     }
 
-    Editor.Options(parseText = f, text = text, autoIndent = Val(true))
+    Editor.Options(parseText = f, autoIndent = Val(true), bus = bus)
   }
 
   val buttText = "red banana"
@@ -26,16 +38,8 @@ object Main extends App {
 
   val app = div(
     Editor.componentWithDefaultStyles(editorOptions),
-    button("Write red banana", onClick.mapTo(buttText) --> text),
-    pre(
-      child.text <--
-        text
-          .signal
-          .map(v =>
-            if (v.isEmpty()) "Write \"red\" to see effect."
-            else v
-          )
-    ),
+    button("Write red banana", onClick.mapTo(Editor.SetText(buttText)) --> bus),
+    pre(child.text <-- textChangeStream),
     h3("Normal content editable div"),
     div(
       width("300px"),
