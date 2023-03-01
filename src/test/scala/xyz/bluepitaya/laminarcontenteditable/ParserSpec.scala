@@ -28,7 +28,6 @@ class ParserSpec extends AnyFlatSpec with Matchers {
     element.innerHTML = "1<div><div>2</div></div>"
 
     val result = Parser.toTextContent(element)
-    println(element.innerText)
     val expected = "1\n2"
 
     // FIXME: nested divs are parsed badly in parse function

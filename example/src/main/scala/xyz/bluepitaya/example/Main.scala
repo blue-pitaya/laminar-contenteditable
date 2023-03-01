@@ -20,13 +20,13 @@ object Main extends App {
     Editor.Options(parseText = f, text = text, autoIndent = Val(true))
   }
 
-  // val buttText = "red banana"
-  val buttText = "<div><div>1</div><div>2</div></div>"
+  val buttText = "red banana"
   val buttText2 = "<h1>ElO!</h1><h2>YO!</h2>"
+  val buttText3 = "<div><div>1</div><div>2</div></div>"
 
   val app = div(
     Editor.componentWithDefaultStyles(editorOptions),
-    button("Write red banana", onClick.mapTo(buttText2) --> text),
+    button("Write red banana", onClick.mapTo(buttText) --> text),
     pre(
       child.text <--
         text

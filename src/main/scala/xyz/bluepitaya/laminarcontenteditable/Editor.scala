@@ -5,14 +5,9 @@ import org.scalajs.dom
 import MutationObserverHelper._
 import StringHelper._
 
-//FIXME: external text should preserve current caret (or dont set any if no caret)
 //TODO: hitting enter halfway of indent will leave incomplete indent on original line
-//TODO: remove div? and add warning about adding children
 //TODO: add to readme warning about innerHTML (or do sanitiztion automaticly and add "unsafe" method)
-// FIXME: traversal of pre element first child only (???)
 // FIXME: HTML SANITAZATION TO PREVENT XSS
-// TODO: windows endings? in parsing HTML to text
-// TODO: change autoIndentChar to string later
 
 object Editor {
   case class Options(
