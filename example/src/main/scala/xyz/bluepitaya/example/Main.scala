@@ -56,4 +56,5 @@ object Main extends App {
   val containerNode = dom.document.querySelector("#app")
 
   render(containerNode, app)
+  bus.emit(SetText("red tomato"))
 }
