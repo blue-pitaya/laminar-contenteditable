@@ -26,7 +26,7 @@ lazy val root = (project in file("."))
       //"-Xlint"
     ),
     libraryDependencies += "com.raquo" %%% "laminar" % "0.14.5",
-    libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.13" % Test,
+    libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.15" % Test,
     publishing,
     jsEnv := new SeleniumJSEnv(new FirefoxOptions().setLogLevel(FirefoxDriverLogLevel.FATAL), SeleniumJSEnv.Config().withKeepAlive(false)),
   )

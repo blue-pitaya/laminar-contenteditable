@@ -5,7 +5,6 @@ import org.scalajs.dom
 import MutationObserverHelper._
 import StringHelper._
 
-//TODO: hitting enter halfway of indent will leave incomplete indent on original line
 //TODO: add to readme warning about innerHTML (or do sanitiztion automaticly and add "unsafe" method)
 // FIXME: HTML SANITAZATION TO PREVENT XSS
 
@@ -14,7 +13,7 @@ object Editor {
       parseText: String => String,
       text: Var[String],
       autoIndent: Signal[Boolean] = Val(false),
-      autoIndentChar: Char = '\t'
+      autoIndentChar: Char = '⊕'
   )
 
   sealed trait Ev

@@ -1,9 +1,9 @@
 package xyz.bluepitaya.laminarcontenteditable
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
 import com.raquo.laminar.api.L._
 import org.scalajs.dom
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 class EditorSpec extends AnyFlatSpec with Matchers {
   val highlighRedTextTransform = (v: String) => {
