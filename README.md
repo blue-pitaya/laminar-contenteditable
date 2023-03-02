@@ -2,6 +2,10 @@
 
 Simple library for simulating extended textarea.
 
+## XSS warning
+
+Component is using innerHTML assign to update content. Although user input is escaped by default (so user can't inject some html/js code), your function is not escaped.
+
 ## Laminar 15 note
 
 This library will be updated to laminar 15 soon.

@@ -5,9 +5,6 @@ import org.scalajs.dom
 import MutationObserverHelper._
 import StringHelper._
 
-//TODO: add to readme warning about innerHTML (or do sanitiztion automaticly and add "unsafe" method)
-// FIXME: HTML SANITAZATION TO PREVENT XSS
-
 object Editor {
   case class Options(
       parseText: String => String,
@@ -115,7 +112,8 @@ object Editor {
       evBus: EventBus[Ev],
       options: Options
   ): Unit = {
-    val parsedTextContent = options.parseText(text)
+    val escapedHtml = HtmlEscape.escape(text)
+    val parsedTextContent = options.parseText(escapedHtml)
     // Turn content to html content with respect for contenteditable logic
     val htmlContent = Parser.toHtmlContent(parsedTextContent)
 
