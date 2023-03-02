@@ -20,6 +20,19 @@ class ParserSpec extends AnyFlatSpec with Matchers {
     result shouldEqual expected
   }
 
+  "html to text" should "ignore newline on first div" in {
+    val element = dom
+      .document
+      .createElement("PRE")
+      .asInstanceOf[dom.HTMLElement]
+    element.innerHTML = "<div><br/></div>"
+
+    val result = Parser.toTextContent(element)
+    val expected = ""
+
+    result shouldEqual expected
+  }
+
   "html to text" should "treat nested divs correctly" in {
     val element = dom
       .document
@@ -30,7 +43,6 @@ class ParserSpec extends AnyFlatSpec with Matchers {
     val result = Parser.toTextContent(element)
     val expected = "1\n2"
 
-    // FIXME: nested divs are parsed badly in parse function
-    // result shouldEqual expected
+    result shouldEqual expected
   }
 }

@@ -19,32 +19,35 @@ object Parser {
   import DomNodeExtensions.RichNode
 
   def toTextContent(element: dom.HTMLElement): String = {
-    def nodeToString(node: dom.Node): String =
-      if (node.isTextNode) node.textContent
-      else if (node.isDivNode) "\n"
-      else ""
+    case class QueueItem(node: dom.Node, isFirstChild: Boolean)
 
-    def updateQueue(
-        queue: Seq[dom.Node],
-        currentNode: dom.Node
-    ): Seq[dom.Node] = {
-      val childOpt = Option(currentNode.firstChild)
-      val siblingOpt = Option(currentNode.nextSibling)
-
-      Seq(childOpt).flatten ++ Seq(siblingOpt).flatten ++ queue
+    def getText(q: QueueItem): String = {
+      q.node match {
+        case n if n.isTextNode                   => n.textContent
+        case n if n.isDivNode && !q.isFirstChild => "\n"
+        case _                                   => ""
+      }
     }
 
-    @tailrec
-    def traverseNodes(queue: Seq[dom.Node], content: String): String =
-      queue match {
-        case node :: rest =>
-          val nextContent = content + nodeToString(node)
-          val nextQueue = updateQueue(rest, node)
-          traverseNodes(nextQueue, nextContent)
-        case Nil => content
+    def getChildren(queueItem: QueueItem): Seq[QueueItem] = {
+      val items = queueItem.node.childNodes.toSeq.map(n => QueueItem(n, false))
+      items match {
+        case head :: next => head.copy(isFirstChild = true) :: next
+        case Nil          => Nil
       }
+    }
 
-    traverseNodes(Seq(element), "")
+    def traverse(queue: Seq[QueueItem], content: String): String = queue match {
+      case head :: rest =>
+        val nextContent = content + getText(head)
+        val children = getChildren(head)
+
+        val nextQueue = children ++ rest
+        traverse(nextQueue, nextContent)
+      case Nil => content
+    }
+
+    traverse(Seq(QueueItem(element, true)), "")
   }
 
   def toHtmlContent(content: String): String = content
