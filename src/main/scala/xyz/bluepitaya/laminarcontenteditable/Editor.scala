@@ -7,26 +7,22 @@ import StringHelper._
 
 object Editor {
   case class Options(
-      parseText: String => String,
+      parseText: String => String = identity,
+      text: Var[String] = Var(""),
       autoIndent: Signal[Boolean] = Val(false),
-      autoIndentChar: Char = '⊕',
-      bus: EventBus[Event] = new EventBus[Event]
+      autoIndentChar: Char = '\t'
   )
 
-  sealed trait Event
-  case class SetText(v: String) extends Event
-  case class TextChanged(v: String) extends Event
-
-  private[laminarcontenteditable] sealed trait Ev
+  private[laminarcontenteditable] sealed trait Event
   private[laminarcontenteditable] case class ChangeHtml(
       v: String,
       caretPosition: Option[CaretPosition]
-  ) extends Ev
-  private[laminarcontenteditable] case object MutObsOn extends Ev
-  private[laminarcontenteditable] case object MutObsOff extends Ev
+  ) extends Event
+  private[laminarcontenteditable] case object MutObsOn extends Event
+  private[laminarcontenteditable] case object MutObsOff extends Event
 
-  def component(options: Options) = {
-    val evBus: EventBus[Ev] = new EventBus
+  def component(options: Options = Editor.Options()) = {
+    val evBus: EventBus[Event] = new EventBus
     val keyBus: EventBus[dom.KeyboardEvent] = new EventBus
 
     div(
@@ -54,7 +50,17 @@ object Editor {
         },
         inContext { ctx =>
           Seq(
-            options.bus --> obs(ctx.ref, evBus, options),
+            options.text --> { v =>
+              val caretPosition = CaretOps.getPosition(ctx.ref)
+              commitTextChange(
+                v,
+                caretPosition,
+                evBus,
+                options,
+                // don't update text state to avoid infinite loop
+                updateText = false
+              )
+            },
             onKeyDown --> keyBus,
             keyBus.events.withCurrentValueOf(options.autoIndent) --> {
               case (e, true) => AutoIndent
@@ -79,23 +85,10 @@ object Editor {
     component(options).amend(styles)
   }
 
-  private def obs(
-      element: dom.HTMLElement,
-      evBus: EventBus[Ev],
-      options: Options
-  ): Observer[Event] = Observer[Event] { e =>
-    e match {
-      case SetText(v) =>
-        val caretPosition = CaretOps.getPosition(element)
-        commitTextChange(v, caretPosition, evBus, options)
-      case TextChanged(v) => ()
-    }
-  }
-
   private def evObserver(
       mutObs: dom.MutationObserver,
       element: dom.HTMLElement
-  ) = Observer[Ev] { e =>
+  ) = Observer[Event] { e =>
     e match {
       case ChangeHtml(v, caretPosition) =>
         element.innerHTML = v
@@ -109,8 +102,9 @@ object Editor {
   private def commitTextChange(
       text: String,
       caretPosition: Option[CaretPosition],
-      evBus: EventBus[Ev],
-      options: Options
+      evBus: EventBus[Event],
+      options: Options,
+      updateText: Boolean = true
   ): Unit = {
     val escapedHtml = HtmlEscape.escape(text)
     val parsedTextContent = options.parseText(escapedHtml)
@@ -121,14 +115,16 @@ object Editor {
     evBus.emit(MutObsOff)
     evBus.emit(ChangeHtml(htmlContent, caretPosition))
     evBus.emit(MutObsOn)
-    options.bus.emit(TextChanged(text))
+    if (updateText) {
+      options.text.set(text)
+    }
   }
 
   private[laminarcontenteditable] def insertTextOnCaret(
       text: String,
       options: Options,
       element: dom.HTMLElement,
-      evBus: EventBus[Ev]
+      evBus: EventBus[Event]
   ): Unit = {
     // Get text content with newlines from element
     val textContent = Parser.toTextContent(element)

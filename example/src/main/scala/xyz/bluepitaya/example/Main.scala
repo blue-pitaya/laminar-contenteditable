@@ -3,20 +3,14 @@ package xyz.bluepitaya.example
 import com.raquo.laminar.api.L._
 import org.scalajs.dom
 import xyz.bluepitaya.laminarcontenteditable.Editor
-import xyz.bluepitaya.laminarcontenteditable.Editor.SetText
-import xyz.bluepitaya.laminarcontenteditable.Editor.TextChanged
 
 object Main extends App {
-  val bus = new EventBus[Editor.Event]
-  val textChangeStream = bus
-    .events
-    .map { e =>
-      e match {
-        case SetText(v) => ""
-        case TextChanged(v) =>
-          if (v.text.isEmpty()) "Write \"red\" to see effect."
-          else v.text
-      }
+  val text = Var("red tomato")
+  val textChangeSignal = text
+    .signal
+    .map { v =>
+      if (v.text.isEmpty()) "Write \"red\" to see effect."
+      else v.text
     }
 
   val editorOptions = {
@@ -25,11 +19,7 @@ object Main extends App {
       regex.replaceAllIn(v, _ => """<span style="color: red;">red</span>""")
     }
 
-    val insertTextF = (v: String) => {
-      "1<div><div>2</div></div>"
-    }
-
-    Editor.Options(parseText = f, autoIndent = Val(true), bus = bus)
+    Editor.Options(parseText = f, autoIndent = Val(true), text = text)
   }
 
   val buttText = "red banana"
@@ -38,8 +28,8 @@ object Main extends App {
 
   val app = div(
     Editor.componentWithDefaultStyles(editorOptions),
-    button("Write red banana", onClick.mapTo(Editor.SetText(buttText)) --> bus),
-    pre(child.text <-- textChangeStream),
+    button("Write red banana", onClick.mapTo(buttText) --> text),
+    pre(child.text <-- textChangeSignal),
     h3("Normal content editable div"),
     div(
       width("300px"),
@@ -56,5 +46,4 @@ object Main extends App {
   val containerNode = dom.document.querySelector("#app")
 
   render(containerNode, app)
-  bus.emit(SetText("red tomato"))
 }

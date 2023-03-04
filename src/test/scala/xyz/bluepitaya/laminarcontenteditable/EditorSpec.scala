@@ -23,10 +23,10 @@ class EditorSpec extends AnyFlatSpec with Matchers {
     wrapper
   }
 
-  def createSut(wrapper: dom.HTMLElement, bus: EventBus[Editor.Event]) = {
+  def createSut(wrapper: dom.HTMLElement, text: Var[String]) = {
     val app = Editor
       .component(
-        Editor.Options(parseText = highlighRedTextTransform, bus = bus)
+        Editor.Options(parseText = highlighRedTextTransform, text = text)
       )
       .amend(idAttr("editor"))
     render(wrapper, app)
@@ -41,13 +41,12 @@ class EditorSpec extends AnyFlatSpec with Matchers {
     val text1 = "red tomato"
     val text2 = "red banana"
 
-    val bus = new EventBus[Editor.Event]
+    val text = Var(text1)
 
-    createSut(createWrapper(), bus)
-    bus.emit(Editor.SetText(text1))
+    createSut(createWrapper(), text)
 
     CaretOps.setCaretPosition(CaretPosition(4, 0), editorElement)
-    bus.emit(Editor.SetText(text2))
+    text.set(text2)
 
     CaretOps.getPosition(editorElement) shouldEqual Some(CaretPosition(4, 0))
   }
@@ -57,13 +56,12 @@ class EditorSpec extends AnyFlatSpec with Matchers {
       val text1 = "red tomato\n and red pinacolada"
       val text2 = "red banana"
 
-      val bus = new EventBus[Editor.Event]
-      bus.emit(Editor.SetText(text1))
+      val text = Var(text1)
 
-      createSut(createWrapper(), bus)
+      createSut(createWrapper(), text)
 
       CaretOps.setCaretPosition(CaretPosition(18, 0), editorElement)
-      bus.emit(Editor.SetText(text2))
+      text.set(text2)
 
       CaretOps.getPosition(editorElement) shouldEqual Some(CaretPosition(11, 0))
     }

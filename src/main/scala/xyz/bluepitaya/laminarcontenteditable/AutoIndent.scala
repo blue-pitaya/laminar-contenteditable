@@ -9,7 +9,7 @@ object AutoIndent {
       e: dom.KeyboardEvent,
       options: Editor.Options,
       element: dom.HTMLElement,
-      evBus: EventBus[Editor.Ev]
+      evBus: EventBus[Editor.Event]
   ): Unit = {
     val indentChar = options.autoIndentChar
 
