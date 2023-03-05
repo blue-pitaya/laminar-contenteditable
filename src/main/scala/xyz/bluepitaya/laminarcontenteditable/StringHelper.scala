@@ -2,8 +2,9 @@ package xyz.bluepitaya.laminarcontenteditable
 
 object StringHelper {
   implicit class RichString(s: String) {
-    def insertOnPos(pos: Int, text: String) = s.substring(0, pos) + text +
-      s.substring(pos)
+    def insertOnCaret(caretPos: CaretPosition, text: String) = s
+      .substring(0, caretPos.pos) + text +
+      s.substring(caretPos.pos + caretPos.extent)
 
     /* Return indent size on line where caret resides */
     def getIndentSize(caretPosition: Int, indentChar: Char): Int = {

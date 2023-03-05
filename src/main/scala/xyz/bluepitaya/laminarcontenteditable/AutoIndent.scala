@@ -27,6 +27,7 @@ object AutoIndent {
         val position = caretPosition.pos
         val text = Parser.toTextContent(element)
         val indentSize = text.getIndentSize(position, indentChar)
+
         Editor.insertTextOnCaret(
           "\n" + (indentChar.toString * indentSize),
           options,

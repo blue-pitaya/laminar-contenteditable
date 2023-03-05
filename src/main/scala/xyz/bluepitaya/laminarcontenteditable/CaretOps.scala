@@ -47,34 +47,39 @@ object CaretOps {
     else if (node.isDivNode) 1
     else 0
 
-  // TODO: extent
   def getPosition(element: dom.HTMLElement): Option[CaretPosition] = {
     val range = getCurrentRange
     range
       .map { range =>
+        def traverse(
+            queue: Seq[dom.Node],
+            currentOffset: Int,
+            rangeContainer: dom.Node,
+            rangeOffset: Int
+        ): Int = queue match {
+          case node :: rest =>
+            if (node == rangeContainer) {
+              val additionalOffset =
+                if (node.isDivNode) 1
+                else 0
+              currentOffset + rangeOffset + additionalOffset
+            } else {
+              val nodeContentSize = getContentSize(node)
+              traverse(
+                updateQueue(rest, node),
+                currentOffset + nodeContentSize,
+                rangeContainer,
+                rangeOffset
+              )
+            }
+          case Nil => currentOffset
+        }
+
+        val position =
+          traverse(Seq(element), 0, range.startContainer, range.startOffset)
         val extent =
-          if (!range.collapsed) range.toString().size
-          else 0
-
-        def traverse(queue: Seq[dom.Node], currentOffset: Int): Int =
-          queue match {
-            case node :: rest =>
-              if (node == range.startContainer) {
-                val additionalOffset =
-                  if (node.isDivNode) 1
-                  else 0
-                currentOffset + range.startOffset + additionalOffset
-              } else {
-                val nodeContentSize = getContentSize(node)
-                traverse(
-                  updateQueue(rest, node),
-                  currentOffset + nodeContentSize
-                )
-              }
-            case Nil => currentOffset
-          }
-
-        val position = traverse(Seq(element), 0)
+          traverse(Seq(element), 0, range.endContainer, range.endOffset) -
+            position
         Some(CaretPosition(position, extent))
       }
       .getOrElse(None)

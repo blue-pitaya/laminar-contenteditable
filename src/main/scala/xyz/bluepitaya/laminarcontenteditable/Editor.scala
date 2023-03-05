@@ -131,7 +131,7 @@ object Editor {
     val caretPosition = CaretOps.getPosition(element)
 
     caretPosition.foreach { caretPosition =>
-      val updatedText = textContent.insertOnPos(caretPosition.pos, text)
+      val updatedText = textContent.insertOnCaret(caretPosition, text)
       // TODO: always good caret?
       val updatedCaret = caretPosition.copy(pos = caretPosition.pos + text.size)
 
