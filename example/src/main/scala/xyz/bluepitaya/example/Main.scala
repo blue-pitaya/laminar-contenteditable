@@ -19,7 +19,12 @@ object Main extends App {
       regex.replaceAllIn(v, _ => """<span style="color: red;">red</span>""")
     }
 
-    Editor.Options(parseText = f, autoIndent = Val(true), text = text)
+    Editor.Options(
+      parseText = f,
+      autoIndent = Val(true),
+      textSignal = text.signal,
+      onTextChanged = text.writer
+    )
   }
 
   val buttText = "red banana"

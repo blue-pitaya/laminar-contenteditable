@@ -26,7 +26,11 @@ class EditorSpec extends AnyFlatSpec with Matchers {
   def createSut(wrapper: dom.HTMLElement, text: Var[String]) = {
     val app = Editor
       .component(
-        Editor.Options(parseText = highlighRedTextTransform, text = text)
+        Editor.Options(
+          parseText = highlighRedTextTransform,
+          textSignal = text.signal,
+          onTextChanged = text.writer
+        )
       )
       .amend(idAttr("editor"))
     render(wrapper, app)

@@ -6,16 +6,22 @@ import StringHelper._
 
 object AutoIndent {
   def onKeyDownObserver(
-      e: dom.KeyboardEvent,
       options: Editor.Options,
       element: dom.HTMLElement,
-      evBus: EventBus[Editor.Event]
-  ): Unit = {
+      evBus: EventBus[Editor.Event],
+      textUpdateBus: EventBus[String]
+  ): Observer[dom.KeyboardEvent] = Observer[dom.KeyboardEvent] { e =>
     val indentChar = options.autoIndentChar
 
     if (e.keyCode == dom.KeyCode.Tab) {
       e.preventDefault()
-      Editor.insertTextOnCaret(indentChar.toString(), options, element, evBus)
+      Editor.insertTextOnCaret(
+        indentChar.toString(),
+        options,
+        element,
+        evBus,
+        textUpdateBus
+      )
     }
 
     if (e.keyCode == dom.KeyCode.Enter) {
@@ -32,7 +38,8 @@ object AutoIndent {
           "\n" + (indentChar.toString * indentSize),
           options,
           element,
-          evBus
+          evBus,
+          textUpdateBus
         )
       }
     }

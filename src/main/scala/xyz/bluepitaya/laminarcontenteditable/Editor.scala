@@ -8,7 +8,8 @@ import StringHelper._
 object Editor {
   case class Options(
       parseText: String => String = identity,
-      text: Var[String] = Var(""),
+      textSignal: Signal[String] = Signal.fromValue(""),
+      onTextChanged: Observer[String] = Observer[String](_ => ()),
       autoIndent: Signal[Boolean] = Val(false),
       autoIndentChar: Char = '\t'
   )
@@ -23,7 +24,7 @@ object Editor {
 
   def component(options: Options = Editor.Options()) = {
     val evBus: EventBus[Event] = new EventBus
-    val keyBus: EventBus[dom.KeyboardEvent] = new EventBus
+    val textUpdateBus: EventBus[String] = new EventBus
 
     div(
       pre(
@@ -40,7 +41,13 @@ object Editor {
             val textContent = Parser.toTextContent(element)
             val caretPosition = CaretOps.getPosition(element)
 
-            commitTextChange(textContent, caretPosition, evBus, options)
+            commitTextChange(
+              textContent,
+              caretPosition,
+              evBus,
+              textUpdateBus,
+              options
+            )
           })
 
           evBus --> evObserver(mutationObserver, element)
@@ -50,25 +57,29 @@ object Editor {
         },
         inContext { ctx =>
           Seq(
-            options.text --> { v =>
+            options.textSignal --> { v =>
               val caretPosition = CaretOps.getPosition(ctx.ref)
               commitTextChange(
                 v,
                 caretPosition,
                 evBus,
+                textUpdateBus,
                 options,
                 // don't update text state to avoid infinite loop
                 updateText = false
               )
             },
-            onKeyDown --> keyBus,
-            keyBus.events.withCurrentValueOf(options.autoIndent) --> {
-              case (e, true) => AutoIndent
-                  .onKeyDownObserver(e, options, ctx.ref, evBus)
-              case (e, false) => ()
-            }
+            onKeyDown.compose(
+              _.withCurrentValueOf(options.autoIndent)
+                .collect { case (event, true) =>
+                  event
+                }
+            ) -->
+              AutoIndent
+                .onKeyDownObserver(options, ctx.ref, evBus, textUpdateBus)
           )
-        }
+        },
+        textUpdateBus --> options.onTextChanged
       )
     )
   }
@@ -103,6 +114,7 @@ object Editor {
       text: String,
       caretPosition: Option[CaretPosition],
       evBus: EventBus[Event],
+      textUpdateBus: EventBus[String],
       options: Options,
       updateText: Boolean = true
   ): Unit = {
@@ -116,7 +128,7 @@ object Editor {
     evBus.emit(ChangeHtml(htmlContent, caretPosition))
     evBus.emit(MutObsOn)
     if (updateText) {
-      options.text.set(text)
+      textUpdateBus.emit(text)
     }
   }
 
@@ -124,7 +136,8 @@ object Editor {
       text: String,
       options: Options,
       element: dom.HTMLElement,
-      evBus: EventBus[Event]
+      evBus: EventBus[Event],
+      textUpdateBus: EventBus[String]
   ): Unit = {
     // Get text content with newlines from element
     val textContent = Parser.toTextContent(element)
@@ -135,7 +148,13 @@ object Editor {
       // TODO: always good caret?
       val updatedCaret = caretPosition.copy(pos = caretPosition.pos + text.size)
 
-      commitTextChange(updatedText, Some(updatedCaret), evBus, options)
+      commitTextChange(
+        updatedText,
+        Some(updatedCaret),
+        evBus,
+        textUpdateBus,
+        options
+      )
     }
   }
 }
