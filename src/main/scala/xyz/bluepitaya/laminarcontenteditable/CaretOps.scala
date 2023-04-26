@@ -24,7 +24,6 @@ object CaretOps {
   private def getCurrentRange: Try[dom.Range] =
     Try(dom.window.getSelection().getRangeAt(0))
 
-  // TODO: possible exception?
   private def setCurrentRange(range: dom.Range): Unit = {
     val selection = dom.window.getSelection()
     selection.removeAllRanges() // empty()

@@ -84,18 +84,6 @@ object Editor {
     )
   }
 
-  def componentWithDefaultStyles(options: Options) = {
-    val styles = Seq(
-      padding("10px"),
-      border("1px solid black"),
-      width("500px"),
-      height("500px"),
-      overflowY.auto
-    )
-
-    component(options).amend(styles)
-  }
-
   private def evObserver(
       mutObs: dom.MutationObserver,
       element: dom.HTMLElement

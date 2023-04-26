@@ -5,47 +5,47 @@ import org.scalajs.dom
 import xyz.bluepitaya.laminarcontenteditable.Editor
 
 object Main extends App {
-  val text = Var("red tomato")
-  val textChangeSignal = text
-    .signal
-    .map { v =>
-      if (v.text.isEmpty()) "Write \"red\" to see effect."
-      else v.text
-    }
+  val text =
+    Var("""Some hex colors (try write one yourself): #FF0000 #00aa00 #0000ff
+    |	Auto indent included. (hit enter on this line)
+    |
+    |Text in quotes is 'big'!!!""".stripMargin)
 
-  val editorOptions = {
-    val f = (v: String) => {
-      val regex = """red""".r
-      regex.replaceAllIn(v, _ => """<span style="color: red;">red</span>""")
-    }
+  val editorOptions = Editor.Options(
+    parseText = (text: String) => {
+      // special HTML characters (like single quote) are escaped
+      val quoteRegex = """&#39;(.+?)&#39;""".r
+      val halfParsedText = quoteRegex.replaceAllIn(
+        text,
+        m => s"""<span style="font-size: 20px;">'${m.group(1)}'</span>"""
+      )
+      val colorRegex = """#([0-9]|[a-f]|[A-F]){6}""".r
+      val parsedText = colorRegex.replaceAllIn(
+        halfParsedText,
+        m => s"""<span style="color: $m;">$m</span>"""
+      )
 
-    Editor.Options(
-      parseText = f,
-      autoIndent = Val(true),
-      textSignal = text.signal,
-      onTextChanged = text.writer
-    )
-  }
+      parsedText
+    },
+    autoIndent = Val(true),
+    textSignal = text.signal,
+    onTextChanged = text.writer
+  )
 
-  val buttText = "red banana"
-  val buttText2 = "<h1>ElO!</h1><h2>YO!</h2>"
-  val buttText3 = "<div><div>1</div><div>2</div></div>"
+  val styles = Seq(
+    padding("10px"),
+    border("1px solid black"),
+    width("600px"),
+    height("300px"),
+    overflowY.auto
+  )
 
   val app = div(
-    Editor.componentWithDefaultStyles(editorOptions),
-    button("Write red banana", onClick.mapTo(buttText) --> text),
-    pre(child.text <-- textChangeSignal),
-    h3("Normal content editable div"),
-    div(
-      width("300px"),
-      height("300px"),
-      padding("10px"),
-      backgroundColor("#dddddd"),
-      contentEditable(true),
-      onMountCallback { ctx =>
-        ctx.thisNode.ref.innerHTML = buttText2
-      }
-    )
+    display.flex,
+    flexDirection.row,
+    styleProp("gap")("30px"),
+    div(h2("Extended textarea"), Editor.component(editorOptions).amend(styles)),
+    div(h2("Raw text"), pre(child.text <-- text.signal))
   )
 
   val containerNode = dom.document.querySelector("#app")
