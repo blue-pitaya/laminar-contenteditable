@@ -4,38 +4,65 @@ import org.scalajs.linker.interface.ModuleSplitStyle
 import org.openqa.selenium.firefox.{FirefoxOptions, FirefoxDriverLogLevel}
 import org.scalajs.jsenv.selenium.SeleniumJSEnv
 
-lazy val baseSettings = Seq(
-  organization := "xyz.bluepitaya",
-  scalaVersion := "2.13.8",
-  version := "1.0"
+lazy val publishSettings = Seq(
+  organization := "dev.bluepitaya",
+  organizationName := "blue.pitaya",
+  organizationHomepage := Some(url("https://bluepitaya.dev")),
+  scmInfo :=
+    Some(
+      ScmInfo(
+        url("https://github.com/blue-pitaya/laminar-contenteditable"),
+        "scm:git@github.com:blue-pitaya/laminar-contenteditable.git"
+      )
+    ),
+  developers :=
+    List(
+      Developer(
+        id = "blue.pitaya",
+        name = "blue.pitaya",
+        email = "blue.pitaya@pm.me",
+        url = url("https://bluepitaya.dev")
+      )
+    ),
+  licenses := List(License.MIT),
+  homepage := Some(url("https://bluepitaya.dev")),
+  description :=
+    "Library for simulating extended textarea using contenteditable.",
+  // Remove all additional repository other than Maven Central from POM
+  pomIncludeRepository := { _ =>
+    false
+  },
+  publishMavenStyle := true,
+  publishTo := {
+    val nexus = "https://s01.oss.sonatype.org/"
+    if (isSnapshot.value)
+      Some("snapshots" at nexus + "content/repositories/snapshots")
+    else Some("releases" at nexus + "service/local/staging/deploy/maven2")
+  }
 )
 
-val publishing = Seq(
-  // publishing
-  publishMavenStyle := true,
-  Test / publishArtifact := false,
-  pomIncludeRepository := (_ ⇒ false),
-)
+lazy val baseSettings = Seq(scalaVersion := "2.13.8", version := "0.1")
 
 lazy val root = (project in file("."))
   .settings(baseSettings)
-  .enablePlugins(ScalaJSPlugin) 
+  .settings(publishSettings)
+  .enablePlugins(ScalaJSPlugin)
   .settings(
     name := "laminar-contenteditable",
-    scalacOptions := Seq(
-      //"-Xlint"
-    ),
+    scalacOptions := Seq("-Xlint"),
     libraryDependencies += "com.raquo" %%% "laminar" % "15.0.0-M7",
-    libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.15" % Test,
-    publishing,
-    jsEnv := new SeleniumJSEnv(new FirefoxOptions().setLogLevel(FirefoxDriverLogLevel.FATAL), SeleniumJSEnv.Config().withKeepAlive(false)),
+    libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.15" % Test
+    // TODO: enable only for tests
+    // jsEnv := new SeleniumJSEnv(new FirefoxOptions().setLogLevel(FirefoxDriverLogLevel.FATAL), SeleniumJSEnv.Config().withKeepAlive(false)),
   )
 
 lazy val example = (project in file("example"))
   .dependsOn(root)
   .settings(baseSettings)
   .settings(
+    scalacOptions := Seq("-Xlint"),
     name := "laminar-contenteditable-example",
+    libraryDependencies += "org.planet42" %%% "laika-core" % "0.19.0",
     scalaJSLinkerConfig ~= {
       _.withModuleKind(ModuleKind.ESModule)
         .withOutputPatterns(OutputPatterns.fromJSFile("%s.js"))
@@ -47,7 +74,4 @@ lazy val example = (project in file("example"))
     Compile / fullLinkJS / scalaJSLinkerOutputDirectory :=
       baseDirectory.value / "ui/sccode/"
   )
-  .enablePlugins(ScalaJSPlugin) 
-
-
-// See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for instructions on how to publish to Sonatype.
+  .enablePlugins(ScalaJSPlugin)
