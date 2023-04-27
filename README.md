@@ -4,7 +4,7 @@
 
 Simple library for simulating extended textarea in [Laminar](https://laminar.dev/).
 
-See [demo](https://blue-pitaya.github.io/laminar-color/).
+See [demo](https://blue-pitaya.github.io/laminar-contenteditable/).
 
 ## Instalation
 
