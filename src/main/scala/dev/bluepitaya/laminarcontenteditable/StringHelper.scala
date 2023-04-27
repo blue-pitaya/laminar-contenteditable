@@ -1,4 +1,4 @@
-package xyz.bluepitaya.laminarcontenteditable
+package dev.bluepitaya.laminarcontenteditable
 
 object StringHelper {
   implicit class RichString(s: String) {

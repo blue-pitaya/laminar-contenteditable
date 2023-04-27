@@ -1,8 +1,8 @@
-package xyz.bluepitaya.example
+package dev.bluepitaya.example
 
 import com.raquo.laminar.api.L._
 import org.scalajs.dom
-import xyz.bluepitaya.laminarcontenteditable.Editor
+import dev.bluepitaya.laminarcontenteditable.Editor
 
 object Example {
   def component() = {

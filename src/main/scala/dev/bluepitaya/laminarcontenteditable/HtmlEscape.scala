@@ -1,4 +1,4 @@
-package xyz.bluepitaya.laminarcontenteditable
+package dev.bluepitaya.laminarcontenteditable
 
 object HtmlEscape {
   def escape(html: String): String = {

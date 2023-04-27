@@ -1,4 +1,4 @@
-package xyz.bluepitaya.laminarcontenteditable
+package dev.bluepitaya.laminarcontenteditable
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers

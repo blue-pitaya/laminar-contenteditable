@@ -1,4 +1,4 @@
-package xyz.bluepitaya.laminarcontenteditable
+package dev.bluepitaya.laminarcontenteditable
 
 import com.raquo.laminar.api.L._
 import org.scalajs.dom
