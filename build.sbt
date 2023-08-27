@@ -41,7 +41,7 @@ lazy val publishSettings = Seq(
   }
 )
 
-lazy val baseSettings = Seq(scalaVersion := "2.13.8", version := "0.1")
+lazy val baseSettings = Seq(scalaVersion := "2.13.8", version := "0.2")
 
 lazy val root = (project in file("."))
   .settings(baseSettings)
@@ -50,7 +50,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "laminar-contenteditable",
     scalacOptions := Seq("-Xlint"),
-    libraryDependencies += "com.raquo" %%% "laminar" % "15.0.0-M7",
+    libraryDependencies += "com.raquo" %%% "laminar" % "16.0.0",
     libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.15" % Test
     // UNCOMMENT THIS TO ENABLE TESTS
     // jsEnv := new SeleniumJSEnv(new FirefoxOptions().setLogLevel(FirefoxDriverLogLevel.FATAL), SeleniumJSEnv.Config().withKeepAlive(false)),

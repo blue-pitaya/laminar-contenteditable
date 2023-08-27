@@ -8,8 +8,8 @@ import StringHelper._
 object Editor {
   case class Options(
       parseText: String => String = identity,
-      textSignal: Signal[String] = Signal.fromValue(""),
-      onTextChanged: Observer[String] = Observer[String](_ => ()),
+      textSignal: Signal[String] = Val(""),
+      onTextChanged: Observer[String] = Observer.empty[String],
       autoIndent: Signal[Boolean] = Val(false),
       autoIndentChar: Char = '\t'
   )

@@ -8,8 +8,10 @@ See [demo](https://blue-pitaya.github.io/laminar-contenteditable/).
 
 ## Instalation
 
+For Laminar 16:
+
 ```scala
-libraryDependencies += "dev.bluepitaya" %%% "laminar-contenteditable" % "0.1"
+libraryDependencies += "dev.bluepitaya" %%% "laminar-contenteditable" % "0.2"
 ```
 
 ## Usage
